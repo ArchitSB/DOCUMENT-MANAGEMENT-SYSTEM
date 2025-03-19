@@ -1,39 +1,47 @@
 const express = require('express');
 const router = express.Router();
-
-// Mock database for demonstration purposes
-const folders = [
-    { folderId: '04a1018b-5c2b-499a-b999-d4ae81abc1a6', name: 'Sample Folder', type: 'csv', maxFileLimit: 10, files: [] }
-];
+const { Folder, File } = require('../models'); // Import the models
 
 // Get Files by Type Across Folders Endpoint
-router.get('/files', (req, res) => {
+router.get('/files', async (req, res) => {
     const { type } = req.query;
 
-    const files = folders.flatMap(folder => 
-        folder.files.filter(file => file.type === `application/${type}`)
-    );
+    try {
+        const files = await File.findAll({
+            where: {
+                type: `application/${type}`
+            }
+        });
 
-    res.status(200).json({ files });
+        res.status(200).json({ files });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
 });
 
 // Get File Metadata Endpoint
-router.get('/folders/:folderId/files/metadata', (req, res) => {
+router.get('/folders/:folderId/files/metadata', async (req, res) => {
     const { folderId } = req.params;
 
-    const folder = folders.find(f => f.folderId === folderId);
-    if (!folder) {
-        return res.status(404).json({ message: 'Folder does not exist' });
+    try {
+        const folder = await Folder.findByPk(folderId, {
+            include: [{ model: File, as: 'files' }]
+        });
+        if (!folder) {
+            return res.status(404).json({ message: 'Folder does not exist' });
+        }
+
+        const filesMetadata = folder.files.map(file => ({
+            fileId: file.fileId,
+            name: file.name,
+            size: file.size,
+            description: file.description
+        }));
+
+        res.status(200).json({ files: filesMetadata });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
     }
-
-    const filesMetadata = folder.files.map(file => ({
-        fileId: file.fileId,
-        name: file.name,
-        size: file.size,
-        description: file.description
-    }));
-
-    res.status(200).json({ files: filesMetadata });
 });
 
 module.exports = router;

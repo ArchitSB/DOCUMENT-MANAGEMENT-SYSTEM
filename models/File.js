@@ -1,48 +1,42 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-const Folder = require('./Folder');
-
-const File = sequelize.define('File', {
-  fileId: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-    allowNull: false,
-    unique: true
-  },
-  folderId: {
-    type: DataTypes.UUID,
-    references: {
-      model: Folder,
-      key: 'folderId'
+module.exports = (sequelize, DataTypes) => {
+  const File = sequelize.define('File', {
+    fileId: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  type: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  size: {
-    type: DataTypes.INTEGER,
-    allowNull: false
-  },
-  uploadedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-    allowNull: false
-  }
-}, {
-  tableName: 'files',
-  timestamps: false
-});
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    description: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    size: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    uploadedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    folderId: {
+      type: DataTypes.UUID,
+      allowNull: false
+    }
+  }, {
+    tableName: 'files', // Specify the correct table name here
+    timestamps: false
+  });
 
-module.exports = File;
+  File.associate = (models) => {
+    File.belongsTo(models.Folder, { foreignKey: 'folderId', as: 'folder' });
+  };
+
+  return File;
+};
